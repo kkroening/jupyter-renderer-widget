@@ -55,10 +55,15 @@ def to_uint8_rgb(image):
     return image
 
 
-def render_video(out_filename, render_func, frame_count, tqdm=None):
+def render_video(
+    out_filename, render_func, frame_count, tqdm=None, start_frame=0, end_frame=-1
+):
     first_frame = to_uint8_rgb(render_func(0))
     height, width, depth = first_frame.shape
-    frame_nums = range(frame_count)
+    if end_frame < 0:
+        end_frame = frame_count + end_frame
+        assert end_frame >= 0
+    frame_nums = range(start_frame, end_frame + 1)
     if tqdm is not None:
         frame_nums = tqdm(frame_nums)
     with video_pipe_context(out_filename, width, height) as pipe:
@@ -85,21 +90,26 @@ def save_pyplot_fig_as_numpy(fig, dpi=DEFAULT_DPI):
     return np.array(pil_image)
 
 
+def _init_pyplot(width, height, dpi):
+    figsize = (int(width / dpi), int(height / dpi))
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
+    fig.tight_layout()
+    return fig, ax
+
+
 def render_pyplot_video(
     out_filename,
     render_func,
     frame_count,
     tqdm=None,
-    width=960,
-    height=540,
+    width=DEFAULT_WIDTH,
+    height=DEFAULT_HEIGHT,
     dpi=DEFAULT_DPI,
 ):
     # old_backend = plt.get_backend()
     # plt.switch_backend('agg')
     try:
-        figsize = (int(width / dpi), int(height / dpi))
-        fig, ax = plt.subplots(1, 1, figsize=figsize)
-        fig.tight_layout()
+        fig, ax = _init_pyplot(width, height, dpi)
 
         def do_render(frame_num):
             ax.clear()
@@ -156,7 +166,13 @@ class AutoplayVideo(IPython.display.Video):
 
 class Renderer(ipywidgets.VBox):
     def __init__(
-        self, render_func, frame_count, out_filename='out.mp4', width=None, height=None
+        self,
+        render_func,
+        frame_count,
+        out_filename='out.mp4',
+        width=None,
+        height=None,
+        preview=True,
     ):
         render_button = ipywidgets.Button(description='Render')
         render_button.on_click(self._on_render)
@@ -168,14 +184,43 @@ class Renderer(ipywidgets.VBox):
         self.width = width
         self.height = height
         self.out = out
+        self.start_frame = 0
+        self.end_frame = frame_count - 1
+        if preview:
+            with self.out:
+                frame_range = (0, frame_count - 1, 1)
+
+                @ipywidgets.interact(
+                    preview_frame=frame_range,
+                    start_frame=frame_range,
+                    end_frame=frame_range,
+                )
+                def show_preview(
+                    preview_frame=0,
+                    start_frame=self.start_frame,
+                    end_frame=self.end_frame,
+                ):
+                    self._show_preview(preview_frame)
+
+    def _show_preview(self, preview_frame):
+        image = self.render_func(preview_frame)
+        rgb_image = to_uint8_rgb(image)
+        display(PIL.Image.fromarray(rgb_image, 'RGB'))
 
     def _render(self):
-        render_video(self.out_filename, self.render_func, self.frame_count, tqdm=tqdm)
+        render_video(
+            self.out_filename,
+            self.render_func,
+            self.frame_count,
+            tqdm=tqdm,
+            start_frame=self.start_frame,
+            end_frame=self.end_frame,
+        )
 
     def _on_render(self, event):
         with self.out:
-            self.out.clear_output()
             self._render()
+            self.out.clear_output()
             display(AutoplayVideo(self.out_filename, width=self.width))
 
 
@@ -185,20 +230,27 @@ class PyplotRenderer(Renderer):
         render_func,
         frame_count,
         out_filename='out.mp4',
-        width=None,
-        height=None,
+        width=DEFAULT_WIDTH,
+        height=DEFAULT_HEIGHT,
         dpi=DEFAULT_DPI,
+        preview=True,
     ):
-        super(PyplotRenderer, self).__init__(
-            render_func, frame_count, out_filename, width, height
-        )
         self.dpi = dpi
+        super(PyplotRenderer, self).__init__(
+            render_func, frame_count, out_filename, width, height, preview
+        )
+
+    def _show_preview(self, preview_frame):
+        fig, ax = _init_pyplot(self.width, self.height, self.dpi)
+        self.render_func(ax, preview_frame)
 
     def _render(self):
         render_pyplot_video(
             self.out_filename,
             self.render_func,
             self.frame_count,
+            width=self.width,
+            height=self.height,
             tqdm=tqdm,
             dpi=self.dpi,
         )
