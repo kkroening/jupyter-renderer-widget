@@ -31,18 +31,33 @@ def video_pipe_context(filename, width, height):
     process.wait()
 
 
-def render_video(out_filename, render_func, frame_count, tqdm=None):
-    def check(image):
-        if image.dtype != np.uint8:
-            raise TypeError(
-                'image dtype must be {}; got {}'.format(np.dtype(np.uint8), image.dtype)
+def to_uint8_rgb(image):
+    if image.dtype != np.uint8:
+        # TODO: possibly normalize values.
+        image = image.astype(np.uint8)
+    if len(image.shape) == 2:
+        image = image[:, :, np.newaxis]
+        depth = 1
+    elif len(image.shape) == 3:
+        depth = image.shape[-1]
+    else:
+        raise ValueError('image shape must be 2D or 3D; got {}'.format(image.shape))
+    if depth == 1:
+        image = np.tile(image, [1, 1, 3])
+    elif depth == 4:
+        image = image[:, :, :3]
+    elif depth != 3:
+        raise ValueError(
+            'image depth must be either 1 (grayscale), 3 (RGB), or 4 (RGBA); got {}'.format(
+                image.shape
             )
-        if len(image.shape) != 3 or image.shape[2] != 3:
-            raise ValueError('image shape must be (:,:,3); got {}'.format(image.shape))
-        return image
+        )
+    return image
 
-    first_frame = check(render_func(0))
-    height, width = first_frame.shape[:2]
+
+def render_video(out_filename, render_func, frame_count, tqdm=None):
+    first_frame = to_uint8_rgb(render_func(0))
+    height, width, depth = first_frame.shape
     frame_nums = range(frame_count)
     if tqdm is not None:
         frame_nums = tqdm(frame_nums)
@@ -51,7 +66,7 @@ def render_video(out_filename, render_func, frame_count, tqdm=None):
             if frame_num == 0:
                 frame = first_frame
             else:
-                frame = check(render_func(frame_num))
+                frame = to_uint8_rgb(render_func(frame_num))
                 if frame.shape != first_frame.shape:
                     raise ValueError(
                         'image shape changed from {} to {}'.format(
