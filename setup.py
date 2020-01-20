@@ -18,6 +18,7 @@ setup(
         'ipywidgets',
         'matplotlib',
         'numpy',
+        'Pillow',
         'tqdm',
     ],
     extras_require={
