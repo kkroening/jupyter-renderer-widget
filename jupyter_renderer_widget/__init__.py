@@ -8,7 +8,7 @@ import io
 import IPython.display
 import ipywidgets
 import numpy as np
-import PIL
+import PIL.Image
 
 
 DEFAULT_WIDTH = 960
