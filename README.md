@@ -32,6 +32,8 @@ def render(frame_num):
 display(Renderer(render, 40))
 ```
 
+<img src="https://raw.githubusercontent.com/kkroening/jupyter-renderer-widget/master/doc/numpy-grayscale.gif" alt="numpy grayscale rendering" width="75%" />
+
 #### RGB
 
 ```python
@@ -50,6 +52,8 @@ def render(frame_num):
 display(Renderer(render, 40))
 ```
 
+<img src="https://raw.githubusercontent.com/kkroening/jupyter-renderer-widget/master/doc/numpy-rgb.gif" alt="numpy RGB rendering" width="75%" />
+
 ### Matplotlib/Pyplot
 
 `jupyter-renderer-widget` also supports rendering using Pyplot via `jupyter_renderer_widget.PyplotRenderer`:
@@ -63,6 +67,8 @@ def render_pyplot(ax, t):
 
 PyplotRenderer(render_pyplot, frame_count=20, width=640, height=400)
 ```
+
+<img src="https://raw.githubusercontent.com/kkroening/jupyter-renderer-widget/master/doc/pyplot.gif" alt="pyplot rendering" width="75%" />
 
 ## Lower-level building blocks
 
