@@ -173,6 +173,7 @@ class Renderer(ipywidgets.VBox):
         width=None,
         height=None,
         preview=True,
+        preview_frame=0,
     ):
         render_button = ipywidgets.Button(description='Render')
         render_button.on_click(self._on_render)
@@ -180,6 +181,7 @@ class Renderer(ipywidgets.VBox):
         super(Renderer, self).__init__([render_button, out])
         self.render_func = render_func
         self.frame_count = frame_count
+        self.preview_frame = min(preview_frame, self.frame_count - 1)
         self.out_filename = out_filename
         self.width = width
         self.height = height
@@ -196,7 +198,7 @@ class Renderer(ipywidgets.VBox):
                     end_frame=frame_range,
                 )
                 def show_preview(
-                    preview_frame=0,
+                    preview_frame=self.preview_frame,
                     start_frame=self.start_frame,
                     end_frame=self.end_frame,
                 ):
