@@ -17,6 +17,7 @@ While there are likely other solutions out there with more bells and whistles, I
 #### Grayscale
 
 ```python
+from IPython.display import display
 from jupyter_renderer_widget import Renderer
 import numpy as np
 
@@ -37,6 +38,7 @@ display(Renderer(render, 40))
 #### RGB
 
 ```python
+from IPython.display import display
 from jupyter_renderer_widget import Renderer
 import numpy as np
 
@@ -58,6 +60,7 @@ display(Renderer(render, 40))
 
 `jupyter-renderer-widget` also supports rendering using Pyplot via `jupyter_renderer_widget.PyplotRenderer`:
 ```python
+from IPython.display import display
 from jupyter_renderer_widget import PyplotRenderer
 
 def render_pyplot(ax, t):
@@ -65,7 +68,7 @@ def render_pyplot(ax, t):
     ax.set_xlim([0, 10])
     ax.set_ylim([0, 10])
 
-PyplotRenderer(render_pyplot, frame_count=20, width=640, height=400)
+display(PyplotRenderer(render_pyplot, frame_count=20, width=640, height=400))
 ```
 
 <img src="https://raw.githubusercontent.com/kkroening/jupyter-renderer-widget/master/doc/pyplot.gif" alt="pyplot rendering" width="75%" />
